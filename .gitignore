@@ -24,9 +24,19 @@ web/.env
 web/.env.*
 !web/.env.example
 repo/
+# Private submission drafts, exports, signing material, and local credentials
+.artifacts/
+*.docx
+*.pdf
+*.apk
+*.aab
 *.keystore
 *.jks
 *.pem
 *.p12
+*.p8
+*.key
+*.mobileprovision
 **/google-services.json
+**/GoogleService-Info.plist
 **/build/
