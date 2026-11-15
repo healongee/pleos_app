@@ -62,7 +62,7 @@ export function createHandler({ kakaoJsKey = '', unlockGateway = null } = {}) {
       if (req.method === 'GET' && ['/', '/app.js', '/style.css'].includes(path)) {
         const name = path === '/' ? 'index.html' : path.slice(1);
         const file = await readFile(fileURLToPath(new URL(`./${name}`, import.meta.url)));
-        res.writeHead(200, { 'Content-Type': name.endsWith('.js') ? 'text/javascript; charset=utf-8' : name.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'self'; script-src 'self' https://dapi.kakao.com; style-src 'self'; img-src 'self' data: https://*.daumcdn.net https://*.kakaocdn.net; connect-src 'self' https://*.kakao.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" });
+        res.writeHead(200, { 'Content-Type': name.endsWith('.js') ? 'text/javascript; charset=utf-8' : name.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'self'; script-src 'self' https://dapi.kakao.com http://t1.kakaocdn.net https://t1.kakaocdn.net; style-src 'self' 'unsafe-inline' http://t1.kakaocdn.net https://t1.kakaocdn.net https://*.kakaocdn.net; img-src 'self' data: https://*.daumcdn.net http://t1.kakaocdn.net https://*.kakaocdn.net http://mts.kakaocdn.net; connect-src 'self' https://*.kakao.com https://*.daum.net; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" });
         res.end(file);
       } else if (req.method === 'GET' && path === '/api/config') {
         json(res, 200, { kakaoJsKey, demo: true, unlockGatewayConfigured: !!unlockGateway });
@@ -98,7 +98,14 @@ export function createHandler({ kakaoJsKey = '', unlockGateway = null } = {}) {
         const body = await bodyOf(req);
         const shelter = shelters.find(value => value.id === body.shelterId);
         if (!shelter || ![30, 60, 120].includes(body.durationMinutes)) throw error(400, '시연 쉼터와 이용 시간을 선택하세요.');
-        if (requests.some(item => item.shelterId === shelter.id && !['DECLINED', 'COMPLETED'].includes(item.status))) throw error(409, '이 쉼터에 진행 중인 시연 요청이 있습니다.');
+        const active = requests.find(item => item.shelterId === shelter.id && !['DECLINED', 'COMPLETED'].includes(item.status));
+        if (active) {
+          if (active.customerSession === viewer.id) {
+            json(res, 200, { ...publicRequest(active, viewer), alreadyRequested: true });
+            return;
+          }
+          throw error(409, '이 차량은 다른 고객이 이용 요청 중입니다. 다른 시연 차량을 선택해 주세요.');
+        }
         const item = { id: `demo-${nextId++}`, shelterId: shelter.id, ownerId: shelter.ownerId, customerSession: viewer.id, customerLabel: `시연 고객 ${nextId - 1}`, durationMinutes: body.durationMinutes, totalPrice: Math.round(shelter.pricePerHour * body.durationMinutes / 60), status: 'REQUESTED', bankAccount: null, unlock: null };
         requests.push(item);
         json(res, 201, publicRequest(item, viewer));

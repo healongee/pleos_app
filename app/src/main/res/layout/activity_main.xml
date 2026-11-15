@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="#121417" android:orientation="vertical">
+    android:background="#0B111B" android:orientation="vertical">
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:padding="20dp" android:text="In-car rest console · DEMO ONLY\nNo vehicle hardware, payment or booking connection"
-        android:textColor="#FFFFFF" android:textSize="20sp" />
+        android:paddingHorizontal="20dp" android:paddingVertical="13dp"
+        android:background="#111D29" android:text="PLEOS   /   쉼터     ·     LOCAL DEMO"
+        android:textColor="#58DCE2" android:textSize="13sp" android:letterSpacing="0.08" />
     <FrameLayout android:id="@+id/fragmentContainer"
         android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
 </LinearLayout>

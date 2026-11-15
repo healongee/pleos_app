@@ -24,6 +24,11 @@ test('request workflow scopes account to customer and owner, enforces order and 
     assert.equal((await otherOwner('/api/demo-login', { role: 'owner', ownerId: 'owner-b' })).status, 200);
     const created = await customer('/api/requests', { shelterId: 's1', durationMinutes: 60 });
     assert.equal(created.status, 201);
+    const repeated = await customer('/api/requests', { shelterId: 's1', durationMinutes: 60 });
+    assert.equal(repeated.status, 200);
+    assert.equal(repeated.body.alreadyRequested, true);
+    assert.equal(repeated.body.id, created.body.id);
+    assert.equal((await stranger('/api/requests', { shelterId: 's1', durationMinutes: 60 })).status, 409);
     const path = `/api/requests/${created.body.id}`;
     assert.equal((await stranger('/api/requests')).body.requests.length, 0);
     assert.equal((await otherOwner('/api/requests')).body.requests.length, 0);
@@ -84,6 +89,20 @@ test('web entry and listings use Korean and explicitly disclose offline video', 
     assert.match(html, /영상 미연결\/시연/);
     const listing = await (await fetch(`${url}/api/shelters`)).json();
     assert.match(listing.shelters[0].title, /시연/);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test('카카오 지도 SDK 하위 스크립트 로딩에 필요한 CSP 출처를 허용한다', async () => {
+  const server = http.createServer(createHandler({ kakaoJsKey: 'test-public-js-key' }));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const url = `http://127.0.0.1:${server.address().port}`;
+    const response = await fetch(url);
+    const csp = response.headers.get('content-security-policy');
+    assert.match(csp, /script-src[^;]*https:\/\/dapi\.kakao\.com[^;]*http:\/\/t1\.kakaocdn\.net/);
+    assert.match(csp, /img-src[^;]*http:\/\/t1\.kakaocdn\.net/);
+    assert.match(csp, /img-src[^;]*http:\/\/mts\.kakaocdn\.net/);
+    assert.equal((await (await fetch(`${url}/api/config`)).json()).kakaoJsKey, 'test-public-js-key');
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 

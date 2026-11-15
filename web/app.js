@@ -13,7 +13,13 @@ async function api(path, body) {
   return data;
 }
 async function act(path, body) {
-  try { await api(path, body); $('message').textContent = '시연 요청 상태가 변경되었습니다.'; await refresh(); }
+  try {
+    const result = await api(path, body);
+    $('message').textContent = result.alreadyRequested
+      ? '이미 이 차량에 보낸 요청이 있습니다. 아래 「내 시연 요청」에서 진행 상태를 확인하세요.'
+      : '시연 요청 상태가 변경되었습니다.';
+    await refresh();
+  }
   catch (error) { $('message').textContent = error.message; }
 }
 function render() {
